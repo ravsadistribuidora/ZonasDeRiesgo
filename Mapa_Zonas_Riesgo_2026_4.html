@@ -1,0 +1,183 @@
+<!doctype html><html lang=es><head><meta charset=utf8>
+<meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name=theme-color content="#1A1F2B">
+<title>Zonas de Riesgo 2026 — Mapa interactivo</title>
+<link rel=stylesheet href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root{--bar:56px;--side:380px;--peek:158px;--sab:env(safe-area-inset-bottom,0px);--sat:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;font-family:'Segoe UI',system-ui,-apple-system,Arial,sans-serif;background:#0e1117;overscroll-behavior:none}
+body{height:100vh;height:100dvh}
+#bar{position:fixed;top:0;left:0;right:0;min-height:var(--bar);padding:calc(var(--sat) + 0px) 14px 0;background:#1A1F2B;color:#fff;display:flex;align-items:center;gap:10px;z-index:1200;box-shadow:0 2px 8px rgba(0,0,0,.4);overflow-x:auto;white-space:nowrap;scrollbar-width:none}
+#bar::-webkit-scrollbar{display:none}
+#bar b{font-size:16px;flex:none}
+.sub{margin-left:auto;font-size:12px;color:#9aa3b2;flex:none}
+.tab{background:#2c3446;color:#cfd6e2;border:none;padding:9px 15px;border-radius:8px;font-size:14px;cursor:pointer;font-weight:600;transition:.15s;flex:none;min-height:38px}
+.tab:active{transform:scale(.96)}
+.tab.on{background:#D7263D;color:#fff}
+#map{position:fixed;top:var(--bar);bottom:0;left:0;right:var(--side);background:#11151d}
+#side{position:fixed;top:var(--bar);bottom:0;right:0;width:var(--side);background:#11151d;color:#e7ecf3;display:flex;flex-direction:column;border-left:1px solid #232a37;z-index:1100}
+.grip{display:none}
+#peekbar{display:none}
+#nav{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #232a37;background:#161b25;flex:none}
+#nav button{background:#222a38;color:#fff;border:none;width:46px;height:46px;border-radius:12px;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.12s;line-height:1}
+#nav button:active{background:#D7263D;transform:scale(.93)}
+#counter{font-size:13px;color:#9aa6b6;flex:1;text-align:center}
+#counter b{color:#fff;font-size:16px}
+#card{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:18px 18px calc(26px + var(--sab))}
+.chead{display:flex;align-items:flex-start;gap:10px;margin-bottom:4px}
+.dot{width:16px;height:16px;border-radius:50%;flex:none;margin-top:4px;border:2px solid #fff;box-shadow:0 0 3px #000}
+.cname{font-size:20px;font-weight:700;line-height:1.2}
+.ccode{font-size:12px;color:#8d99ab;margin-bottom:12px}
+.zbadge{display:inline-block;padding:5px 13px;border-radius:20px;color:#fff;font-size:12px;font-weight:700;margin-bottom:14px}
+.row{display:flex;gap:8px;font-size:14px;margin:7px 0;align-items:flex-start}
+.row .k{color:#8d99ab;min-width:92px;flex:none}
+.row .v{color:#eef2f7;font-weight:600}
+.sec{margin-top:16px;border-top:1px solid #1e2632;padding-top:14px}
+.sec h4{margin:0 0 9px;font-size:12px;letter-spacing:1.1px;text-transform:uppercase;color:#7e8aa0}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12.5px;padding:6px 11px;border-radius:8px;font-weight:600}
+.chip.r{background:#3a1116;color:#ff9aa6;border:1px solid #5b1a22}
+.chip.a{background:#332915;color:#ffcf8a;border:1px solid #5a4720}
+.chip.ok{background:#15301c;color:#8fe6a6;border:1px solid #235235}
+.chip.neu{background:#1c2330;color:#c4cfe0;border:1px solid #2c3647}
+.none{color:#6c7689;font-style:italic;font-size:13px}
+.legend{background:rgba(255,255,255,.96);padding:8px 11px;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.35);font-size:12px;line-height:1.6;color:#222}
+.legend i{width:12px;height:12px;border-radius:50%;display:inline-block;margin-right:6px;border:2px solid #fff;box-shadow:0 0 2px #888;vertical-align:-2px}
+.lbl{font-weight:700;font-size:10px;color:#fff;text-align:center;text-shadow:0 0 2px #000,0 0 2px #000,0 0 2px #000}
+.leaflet-popup-content{font-size:13px;font-weight:600}
+.hint{font-size:11px;color:#6c7689;text-align:center;padding:0 16px calc(10px + var(--sab))}
+
+/* ---------- MÓVIL ---------- */
+@media(max-width:760px){
+ :root{--side:0px}
+ #map{right:0;bottom:0}
+ #side{top:auto;height:82dvh;height:82vh;border-left:none;border-top:1px solid #2a3340;
+   border-radius:18px 18px 0 0;box-shadow:0 -6px 24px rgba(0,0,0,.5);
+   transform:translateY(calc(100% - var(--peek)));transition:transform .32s cubic-bezier(.22,.61,.36,1);touch-action:none}
+ #side.expanded{transform:translateY(0)}
+ #side.dragging{transition:none}
+ .grip{display:block;width:44px;height:5px;border-radius:3px;background:#3a4456;margin:9px auto 4px;flex:none}
+ #peekbar{display:flex;align-items:center;gap:9px;padding:2px 16px 10px;flex:none;cursor:pointer}
+ #peekbar .dot{margin-top:0}
+ #peekbar .pn{font-weight:700;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+ #peekbar .pz{font-size:11px;color:#9aa6b6;flex:none}
+ #nav{border-top:1px solid #232a37}
+ .hint{display:none}
+ #bar b{font-size:15px}
+ .sub{display:none}
+ .tab{padding:8px 13px;font-size:13px}
+ .leaflet-control-zoom{margin-bottom:calc(var(--peek) + 10px)!important}
+}
+@media(max-width:760px) and (display-mode:standalone){.grip{margin-top:14px}}
+</style></head><body>
+<div id=bar><b>🗺️ Zonas de Riesgo 2026</b>
+<button class=tab id=t_CONCORDIA onclick="show('CONCORDIA')">Concordia</button>
+<button class=tab id=t_FEDERACION onclick="show('FEDERACION')">Federación</button>
+<button class=tab id=t_FELICIANO onclick="show('FELICIANO')">Feliciano</button>
+<span class=sub>Ruta de Riesgo y Monitoreo</span></div>
+<div id=map></div>
+<div id=side>
+ <div class=grip id=grip></div>
+ <div id=peekbar><span class="dot" id=pkdot></span><span class=pn id=pkname></span><span class=pz id=pkzone></span></div>
+ <div id=nav>
+   <button onclick="step(-1)" aria-label="Anterior">‹</button>
+   <div id=counter></div>
+   <button onclick="step(1)" aria-label="Siguiente">›</button>
+ </div>
+ <div id=card></div>
+ <div class=hint>Flechas ‹ › o teclas ← → · Clic en un punto para verlo</div>
+</div>
+<script>
+var DATA={"CONCORDIA": [{"lat": -31.379733431136, "lng": -58.024218823583, "c": "#5D4037", "n": "4531", "nom": "ALVAREZ STELLA MARIS", "dom": "DR. FLORENZA 424", "z": "Difícil acceso", "f": null}, {"lat": -31.375843313908, "lng": -58.027725219727, "c": "#2E7D32", "n": "3460", "nom": "DEBONA NORMA MARIA", "dom": "NOGOYA1736", "z": "Admisible", "f": {"riesgos": [], "accesos": ["Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -31.37820735, "lng": -58.03238176, "c": "#2E7D32", "n": "6723", "nom": "CICOGNINI MIGUEL ANGEL", "dom": "DIAMANTE1549", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar", "Riesgo de atropellamiento"], "accesos": ["Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -31.39891141, "lng": -58.01053763, "c": "#F9A825", "n": "7462", "nom": "ELLI JOSE GABRIEL", "dom": "1 DE MAYO400", "z": "Escolar", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m", "Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -31.39838473, "lng": -58.01377553, "c": "#F9A825", "n": "6697", "nom": "FLORES HECTOR DANIEL", "dom": "1 DE MAYO248", "z": "Escolar", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -31.3636644, "lng": -58.0301181, "c": "#EF6C00", "n": "10592", "nom": "HERNANDEZ JONATHAN RAMON", "dom": "TALA 2363", "z": "Intransitable", "f": {"riesgos": ["Riesgo eléctrico"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": "Pdv en cortada muy angosta y cables sueltos"}}, {"lat": -31.38652868, "lng": -58.0413334, "c": "#D7263D", "n": "1883", "nom": "RONCAGLIONE NELIDA", "dom": "CORTADA  1004", "z": "Peligrosa", "f": null}, {"lat": -31.38785018, "lng": -58.04256631, "c": "#D7263D", "n": "5222", "nom": "TRINIDAD GABRIEL", "dom": "SAAVEDRA Y RIVOLI", "z": "Peligrosa", "f": null}, {"lat": -31.39905405, "lng": -58.0308753, "c": "#D7263D", "n": "1728", "nom": "FERNANDEZ SERGIO", "dom": "CHILE 376", "z": "Peligrosa", "f": null}, {"lat": -31.39950841, "lng": -58.03100523, "c": "#D7263D", "n": "2311", "nom": "ERBEN NORMA", "dom": "CHILE 392", "z": "Peligrosa", "f": null}, {"lat": -31.40488913, "lng": -58.02605289, "c": "#D7263D", "n": "3259", "nom": "LESCANO TERESA", "dom": "LIBERTAD 250", "z": "Peligrosa", "f": null}, {"lat": -31.4055256, "lng": -58.02665511, "c": "#D7263D", "n": "7581", "nom": "LUCERO MARCELO", "dom": "GIULIANI 275", "z": "Peligrosa", "f": null}, {"lat": -31.383811666667, "lng": -58.04352, "c": "#D7263D", "n": "8820", "nom": "GONZALEZ LILIANA", "dom": "LAROCCA 1140", "z": "Peligrosa", "f": null}, {"lat": -31.3825856, "lng": -58.04460801, "c": "#D7263D", "n": "3254", "nom": "GONZALEZ RAUL", "dom": "BALCARCE 1320", "z": "Peligrosa", "f": null}, {"lat": -31.3823444, "lng": -58.0455311, "c": "#D7263D", "n": "9702", "nom": "LOGGIO VANESA", "dom": "BALCARCE 1452", "z": "Peligrosa", "f": null}, {"lat": -31.38912012, "lng": -58.03837393, "c": "#D7263D", "n": "1184", "nom": "CAPRI NORA", "dom": "VILLAGUAY 900", "z": "Peligrosa", "f": null}, {"lat": -31.3990682, "lng": -58.0309409, "c": "#D7263D", "n": "9766", "nom": "ROMERO ANGEL", "dom": "SANTA MARIA DE ORO 545", "z": "Peligrosa", "f": null}, {"lat": -31.3976031379508, "lng": -58.0297993901236, "c": "#D7263D", "n": "7529", "nom": "RODRIGUEZ JAVIER", "dom": "ALEM 525", "z": "Peligrosa", "f": null}, {"lat": -31.36759853, "lng": -58.03625591, "c": "#6A1B9A", "n": "4442", "nom": "PERALTA MAXIMILIANO GUILLERMO", "dom": "PEDRO SAURE1199", "z": "Delictiva", "f": {"riesgos": ["Riesgo de caída"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": "Subida con tierra"}}, {"lat": -31.3853379231836, "lng": -58.044878457811, "c": "#6A1B9A", "n": "10293", "nom": "VALDEBENITO SILVIA PATRICIA", "dom": "2 DE ABRIL1040", "z": "Delictiva", "f": {"riesgos": ["Riesgo de atropellamiento"], "accesos": [], "ilum": "Buena", "tipo": null, "efvo": "NO", "acctxt": null}}, {"lat": -31.38959249, "lng": -58.03724419, "c": "#D7263D", "n": "8127", "nom": "BENITEZ MARIA", "dom": "GUALEGUAY 871", "z": "Peligrosa", "f": null}, {"lat": -31.394426666667, "lng": -58.02652, "c": "#2E7D32", "n": "21360", "nom": "TRIUNFADORES SA CENTRAL", "dom": "ARISTOBULO DEL VALLE393", "z": "Admisible", "f": {"riesgos": ["Peligro de derrumbe", "Riesgo de caída", "Dif. para estacionar"], "accesos": ["Rampa accesible", "Espacio reducido"], "ilum": "Buena", "tipo": null, "efvo": null, "acctxt": null}}, {"lat": -31.38566497, "lng": -58.00353267, "c": "#D7263D", "n": "5547", "nom": "SANCHEZ JORGE", "dom": "NESTOR GARAT 545", "z": "Peligrosa", "f": null}, {"lat": -31.38629236, "lng": -58.00154039, "c": "#D7263D", "n": "4511", "nom": "POLO LUIS", "dom": "LAVALLE 1380", "z": "Peligrosa", "f": null}, {"lat": -31.38613668, "lng": -58.0005896, "c": "#D7263D", "n": "1509", "nom": "WALLINGRE MIGUEL", "dom": "NESTOR GARAT 681", "z": "Peligrosa", "f": null}, {"lat": -31.38605547, "lng": -57.99803632, "c": "#D7263D", "n": "1905", "nom": "COSTEN BLANCA", "dom": "MISIONES 1420", "z": "Peligrosa", "f": null}, {"lat": -31.38508927, "lng": -57.99720397, "c": "#D7263D", "n": "1822", "nom": "ZARATE LUJAN", "dom": "ECHEVERRIA 1495", "z": "Peligrosa", "f": null}, {"lat": -31.385489, "lng": -58.004282, "c": "#D7263D", "n": "5297", "nom": "Garcia Javier", "dom": "N. GARAT 522", "z": "Peligrosa", "f": null}, {"lat": -31.38667, "lng": -57.998165, "c": "#D7263D", "n": "8520", "nom": "Gimenez Mariela", "dom": "MISIONES 1369", "z": "Peligrosa", "f": null}, {"lat": -31.38591597, "lng": -57.99834077, "c": "#D7263D", "n": "9420", "nom": "ROJAS MARIA JOSE", "dom": "DORA VELATTI 1426", "z": "Peligrosa", "f": null}, {"lat": -31.37130581, "lng": -58.03793459, "c": "#D7263D", "n": "8207", "nom": "VELOSO MARCELA", "dom": "GRAL MEDINA 1233", "z": "Peligrosa", "f": null}, {"lat": -31.372213333333, "lng": -58.03854, "c": "#D7263D", "n": "8929", "nom": "ALEGRE FRANCISCO", "dom": "RIVOLI Y G. PEREZ S/N", "z": "Peligrosa", "f": null}, {"lat": -31.3704485, "lng": -58.0179884, "c": "#EF6C00", "n": "10629", "nom": "BENITEZ ELBA RAMONA", "dom": "LAPRIDA 2092", "z": "Intransitable", "f": {"riesgos": ["Riesgo eléctrico"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": "Pdv en cortada. Cables bajos, sin salida"}}, {"lat": -31.3988211, "lng": -57.9995153, "c": "#0277BD", "n": "8558", "nom": "CORREA MARIA JACQUELINE (REGATAS)", "dom": "GASTELACOTO1006", "z": "Inundable / Intransitable", "f": {"riesgos": [], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": null, "efvo": "NO", "acctxt": "Porton con baja altura, no entra el camion, zona inundable"}}], "FEDERACION": [{"lat": -30.991681666667, "lng": -57.921381666667, "c": "#2E7D32", "n": "8200", "nom": "WU HAISHENG", "dom": "LAS AZALEAS1440", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": "SI", "acctxt": "Por el comercio"}}, {"lat": -30.99259878, "lng": -57.91788328, "c": "#2E7D32", "n": "1287", "nom": "WALLINGRE ELADIO ANIBAL", "dom": "AV. SAN MARTIN486", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98272959, "lng": -57.92205299, "c": "#2E7D32", "n": "5916", "nom": "POSTA NORTE", "dom": "AV. ENTRE RIOS270", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es", "Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98217378, "lng": -57.92274121, "c": "#2E7D32", "n": "6323", "nom": "GALARZA EMILCE BEATRIZ", "dom": "AV. ENTRE RIOS182", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.983235, "lng": -57.92150114, "c": "#2E7D32", "n": "1005", "nom": "BURNA ULISES ARIEL BURNA GUSTAVO RENE BURNA MARIEL", "dom": "LOS JAZMINES896", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.9876652, "lng": -57.9279255, "c": "#2E7D32", "n": "1460", "nom": "BURNS NICOLAS EMILIANO", "dom": "AVENIDA ALEM NORTE114", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -30.9828833, "lng": -57.92016286, "c": "#F9A825", "n": "2006", "nom": "SEROFANI VICTOR HUGO", "dom": "LOS JAZMINES687", "z": "Escolar", "f": {"riesgos": ["Riesgo de caída"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "NO", "acctxt": null}}, {"lat": -30.98836176, "lng": -57.92193679, "c": "#2E7D32", "n": "2997", "nom": "KREMER PABLO MAXIMILIANO", "dom": "LAS ROSAS1222", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98981623, "lng": -57.92669396, "c": "#EF6C00", "n": "3001", "nom": "VALDEZ ANGEL JUAN DOMINGO", "dom": "LOS MIRASOLES1181", "z": "Intransitable", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": "SI", "acctxt": null}}, {"lat": -30.98724411, "lng": -57.91593905, "c": "#F9A825", "n": "3146", "nom": "BELTRAMINI DELIA BEATRIZ", "dom": "LAS CAMELIAS513", "z": "Escolar", "f": {"riesgos": ["Riesgo de caída"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98788201, "lng": -57.92406811, "c": "#F9A825", "n": "5560", "nom": "ARCHERITO MARIA YANINA", "dom": "AV. 25 DE MARZO1461", "z": "Escolar", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.97856115, "lng": -57.92720595, "c": "#2E7D32", "n": "6165", "nom": "SILVESTRI DEL LONGO FACUNDO ANDRES", "dom": "PARANA500", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": null, "acctxt": null}}, {"lat": -30.98276876, "lng": -57.92745633, "c": "#2E7D32", "n": "6725", "nom": "PANOZZO GUILLERMO RAFAEL", "dom": "LAS VIOLETAS0", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98785776, "lng": -57.91896863, "c": "#6A1B9A", "n": "6891", "nom": "GIMENEZ GABRIELA SOLEDAD", "dom": "AV. SAN MARTIN173", "z": "Delictiva", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.98682188, "lng": -57.92216274, "c": "#2E7D32", "n": "7337", "nom": "WANG RUIYING", "dom": "AV 25 DE MARZO1172", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.99272779, "lng": -57.92157572, "c": "#2E7D32", "n": "7728", "nom": "BURNA ROQUE ALEJANDRO", "dom": "AV. LAS HORTENSIAS1501", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": null, "acctxt": null}}, {"lat": -30.993351666667, "lng": -57.924241666667, "c": "#2E7D32", "n": "8537", "nom": "TONELLO PAOLA ANALIA", "dom": "AV ALEM (SUR)348", "z": "Admisible", "f": {"riesgos": ["Riesgo de caída", "Dif. para estacionar"], "accesos": ["Escalón/es", "Espacio reducido"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": "SI", "acctxt": null}}, {"lat": -30.984202168632, "lng": -57.923096563943, "c": "#2E7D32", "n": "9533", "nom": "E Y M BALDEZARI S. CAP I SECC IV", "dom": "SARGENTO GOMEZ123", "z": "Admisible", "f": {"riesgos": ["Riesgo de atropellamiento"], "accesos": ["Escalón/es", "Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.9772359, "lng": -57.9266582, "c": "#EF6C00", "n": "9624", "nom": "PERALTA VERA PAOLA (TERMAS)", "dom": "PARANA400", "z": "Intransitable", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": "NO", "acctxt": null}}, {"lat": -30.9787206, "lng": -57.92701939999999, "c": "#2E7D32", "n": "9770", "nom": "PEÑALVER RODRIGO MARTIN", "dom": "PARANA525", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Distancia entrega +50m", "Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.9899154, "lng": -57.92904540000001, "c": "#2E7D32", "n": "9779", "nom": "GUERRERO SILVIA ALEJANDRA", "dom": "NESTOR KIRCHNER1200", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Escalón/es", "Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -31.01832564544947, "lng": -57.957303515013805, "c": "#2E7D32", "n": "9847", "nom": "RIGONI JULIETA SABRINA", "dom": "RUTA44", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Rampa accesible"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.9982728, "lng": -57.91975799999999, "c": "#2E7D32", "n": "10049", "nom": "WEI BAIFA", "dom": "AV SAN MARTIN Y MISIONES1", "z": "Admisible", "f": {"riesgos": ["Riesgo de caída", "Dif. para estacionar"], "accesos": ["Distancia entrega +50m", "Rampa accesible", "Espacio reducido"], "ilum": "Buena", "tipo": "Cliente CONFLICTIVO", "efvo": "SI", "acctxt": null}}, {"lat": -30.9901959, "lng": -57.9295601, "c": "#2E7D32", "n": "10134", "nom": "PACHECO LUCIA", "dom": "AV NESTOR Y JOSE TALARICO1", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}, {"lat": -30.9654998, "lng": -57.9364402, "c": "#2E7D32", "n": "10264", "nom": "KLOSS MARIA DE LOS ANGELES", "dom": "EX RUTA 141", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}], "FELICIANO": [{"lat": -30.387047466966, "lng": -58.755763813451, "c": "#2E7D32", "n": "8251", "nom": "VALDEZ WALTER ANIBAL", "dom": "ALVEAR287", "z": "Admisible", "f": {"riesgos": ["Dif. para estacionar"], "accesos": ["Espacio reducido"], "ilum": "Buena", "tipo": "BUEN CLIENTE", "efvo": "SI", "acctxt": null}}]},PRESENT={"CONCORDIA": ["Peligrosa", "Delictiva", "Intransitable", "Inundable / Intransitable", "Difícil acceso", "Escolar", "Admisible"], "FEDERACION": ["Delictiva", "Intransitable", "Escolar", "Admisible"], "FELICIANO": ["Admisible"]},CMAP={"Peligrosa": "#D7263D", "Delictiva": "#6A1B9A", "Intransitable": "#EF6C00", "Inundable / Intransitable": "#0277BD", "Difícil acceso": "#5D4037", "Escolar": "#F9A825", "Admisible": "#2E7D32", "Otra": "#607D8B"};
+var map=L.map('map',{zoomControl:true,tap:true});
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+var layer=L.layerGroup().addTo(map);
+var legend,markers=[],cur=0,curLoc='CONCORDIA';
+var isMobile=function(){return window.matchMedia('(max-width:760px)').matches};
+function colorFor(z){return CMAP[z]}
+function esc(s){return (s==null?'':String(s)).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+
+function renderCard(i){
+ var p=DATA[curLoc][i];if(!p){return}
+ var f=p.f,h='';
+ h+='<div class=chead><span class=dot style="background:'+p.c+'"></span><div class=cname>'+esc(p.nom)+'</div></div>';
+ h+='<div class=ccode>Cliente #'+p.n+'</div>';
+ h+='<span class=zbadge style="background:'+p.c+'">'+esc(p.z)+'</span>';
+ h+='<div class=row><span class=k>Domicilio</span><span class=v>'+esc(p.dom)+'</span></div>';
+ if(f){
+   h+='<div class=sec><h4>Riesgos del lugar</h4>';
+   h+= f.riesgos&&f.riesgos.length ? '<div class=chips>'+f.riesgos.map(function(x){return '<span class="chip r">⚠ '+esc(x)+'</span>'}).join('')+'</div>' : '<div class=none>Sin riesgos marcados</div>';
+   h+='</div>';
+   h+='<div class=sec><h4>Acceso al PDV</h4>';
+   h+= f.accesos&&f.accesos.length ? '<div class=chips>'+f.accesos.map(function(x){return '<span class="chip a">'+esc(x)+'</span>'}).join('')+'</div>' : '<div class=none>Sin dificultades de acceso</div>';
+   if(f.acctxt) h+='<div class=row style="margin-top:9px"><span class=k>Detalle</span><span class=v>'+esc(f.acctxt)+'</span></div>';
+   h+='</div>';
+   h+='<div class=sec><h4>Condiciones</h4><div class=chips>';
+   if(f.ilum) h+='<span class="chip '+(f.ilum.toLowerCase()=='buena'?'ok':'a')+'">💡 Iluminación '+esc(f.ilum)+'</span>';
+   if(f.tipo) h+='<span class="chip '+(f.tipo.toLowerCase().indexOf('conflict')>=0?'r':'ok')+'">'+(f.tipo.toLowerCase().indexOf('conflict')>=0?'🚩 ':'✔ ')+esc(f.tipo)+'</span>';
+   if(f.efvo) h+='<span class="chip neu">💵 Efectivo &gt;$1M: '+esc(f.efvo)+'</span>';
+   h+='</div></div>';
+ } else { h+='<div class=sec><div class=none>Este cliente no tiene relevamiento detallado en la solapa Formulario.</div></div>'; }
+ document.getElementById('card').innerHTML=h;
+ document.getElementById('counter').innerHTML='<b>'+(i+1)+'</b> / '+DATA[curLoc].length;
+ document.getElementById('pkdot').style.background=p.c;
+ document.getElementById('pkname').textContent='#'+p.n+'  '+p.nom;
+ document.getElementById('pkzone').textContent=p.z;
+}
+function select(i,fly){
+ cur=i;renderCard(i);var p=DATA[curLoc][i];
+ markers.forEach(function(m,j){m.setStyle({radius:j==i?13:9,weight:j==i?4:2,color:j==i?'#111':'#fff'})});
+ if(markers[i]&&markers[i].bringToFront)markers[i].bringToFront();
+ if(fly){
+   if(isMobile()){var off=map.getSize().y*0.22;map.flyTo([p.lat,p.lng],16,{duration:.6});}
+   else map.flyTo([p.lat,p.lng],16,{duration:.7});
+ }
+ markers[i].openPopup();
+}
+function step(d){var n=DATA[curLoc].length;select((cur+d+n)%n,true)}
+function show(loc){
+ curLoc=loc;cur=0;
+ ['CONCORDIA','FEDERACION','FELICIANO'].forEach(function(k){document.getElementById('t_'+k).className='tab'+(k===loc?' on':'')});
+ layer.clearLayers();markers=[];var g=[];
+ DATA[loc].forEach(function(p,i){
+  var m=L.circleMarker([p.lat,p.lng],{radius:9,color:'#fff',weight:2,fillColor:p.c,fillOpacity:1}).addTo(layer);
+  m.bindPopup('<b>#'+p.n+' '+esc(p.nom)+'</b><br>'+esc(p.dom)+'<br><span style="color:'+p.c+'">●</span> '+esc(p.z));
+  m.on('click',function(){select(i,false);if(isMobile())setSheet(true)});
+  markers.push(m);
+  L.marker([p.lat,p.lng],{icon:L.divIcon({className:'lbl',html:p.n,iconSize:[26,12]}),interactive:false}).addTo(layer);
+  g.push([p.lat,p.lng]);
+ });
+ if(g.length===1){map.setView(g[0],15)}else{map.fitBounds(g,{padding:[55,55]})}
+ if(legend)map.removeControl(legend);
+ legend=L.control({position:'bottomleft'});
+ legend.onAdd=function(){var dv=L.DomUtil.create('div','legend');var hh='<b>Tipo de zona</b><br>';
+  PRESENT[loc].forEach(function(z){hh+='<i style="background:'+colorFor(z)+'"></i>'+z+'<br>'});dv.innerHTML=hh;return dv};
+ legend.addTo(map);
+ renderCard(0);
+}
+/* ---- bottom sheet (móvil) ---- */
+var side=document.getElementById('side');
+function setSheet(open){side.classList.toggle('expanded',open);}
+function toggleSheet(){setSheet(!side.classList.contains('expanded'));}
+document.getElementById('grip').addEventListener('click',toggleSheet);
+document.getElementById('peekbar').addEventListener('click',function(){setSheet(true)});
+/* swipe */
+var sy=0,sopen=false,drag=false;
+function ontouchstart(e){if(!isMobile())return;sy=e.touches[0].clientY;sopen=side.classList.contains('expanded');drag=true;side.classList.add('dragging')}
+function ontouchmove(e){if(!drag)return;var dy=e.touches[0].clientY-sy;var base=sopen?0:(side.offsetHeight-parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--peek')));
+ var ty=Math.max(0,base+dy);side.style.transform='translateY('+ty+'px)';}
+function ontouchend(e){if(!drag)return;drag=false;side.classList.remove('dragging');side.style.transform='';
+ var dy=e.changedTouches[0].clientY-sy;
+ if(Math.abs(dy)<8){toggleSheet();return}
+ if(dy<-40)setSheet(true);else if(dy>40)setSheet(false);else setSheet(sopen);}
+['grip','peekbar'].forEach(function(id){var el=document.getElementById(id);
+ el.addEventListener('touchstart',ontouchstart,{passive:true});
+ el.addEventListener('touchmove',ontouchmove,{passive:true});
+ el.addEventListener('touchend',ontouchend);});
+document.addEventListener('keydown',function(e){if(e.key=='ArrowRight')step(1);if(e.key=='ArrowLeft')step(-1)});
+window.addEventListener('resize',function(){setTimeout(function(){map.invalidateSize()},200)});
+show('CONCORDIA');
+setTimeout(function(){map.invalidateSize()},400);
+</script></body></html>
