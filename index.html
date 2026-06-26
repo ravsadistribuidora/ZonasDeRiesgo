@@ -103,6 +103,7 @@ body{height:100vh;height:100dvh}
 <button class=tab id=t_CONCORDIA onclick="show('CONCORDIA')">Concordia</button>
 <button class=tab id=t_FEDERACION onclick="show('FEDERACION')">Federación</button>
 <button class=tab id=t_FELICIANO onclick="show('FELICIANO')">Feliciano</button>
+<button class=tab id=t_FEDERAL onclick="show('FEDERAL')">Federal</button>
 <span class=sub>Ruta de Riesgo y Monitoreo</span></div>
 <div id=map></div>
 <div id=side>
@@ -125,6 +126,7 @@ body{height:100vh;height:100dvh}
    <button class=locbtn id=dl_CONCORDIA onclick="show('CONCORDIA')">Concordia</button>
    <button class=locbtn id=dl_FEDERACION onclick="show('FEDERACION')">Federación</button>
    <button class=locbtn id=dl_FELICIANO onclick="show('FELICIANO')">Feliciano</button>
+   <button class=locbtn id=dl_FEDERAL onclick="show('FEDERAL')">Federal</button>
  </div>
  <div class=dsec>Puntos de venta</div>
  <div class=psearch><input id=ptsearch type=search placeholder="Buscar nombre, código o dirección…" oninput="buildPtList()"></div>
@@ -182,7 +184,7 @@ function select(i,fly){
 function step(d){var n=DATA[curLoc].length;select((cur+d+n)%n,true)}
 function show(loc){
  curLoc=loc;cur=0;
- ['CONCORDIA','FEDERACION','FELICIANO'].forEach(function(k){document.getElementById('t_'+k).className='tab'+(k===loc?' on':'');var dl=document.getElementById('dl_'+k);if(dl)dl.className='locbtn'+(k===loc?' on':'')});
+ ['CONCORDIA','FEDERACION','FELICIANO','FEDERAL'].forEach(function(k){document.getElementById('t_'+k).className='tab'+(k===loc?' on':'');var dl=document.getElementById('dl_'+k);if(dl)dl.className='locbtn'+(k===loc?' on':'')});
  layer.clearLayers();markers=[];var g=[];selRing.setStyle({opacity:0});
  DATA[loc].forEach(function(p,i){
   var m=L.circleMarker([p.lat,p.lng],{radius:8,color:'#fff',weight:2,fillColor:p.c,fillOpacity:1}).addTo(layer);
